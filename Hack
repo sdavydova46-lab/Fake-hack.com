@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>// DARKNET TERMINAL v9</title>
+<style>
+:root{
+  --green:#00ff00;
+  --cyan:#00ffff;
+  --pink:#ff00ff;
+  --bg:#000;
+}
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+html,body{
+  height:100%;
+}
+body{
+  font-family:"Courier New",monospace;
+  background:var(--bg);
+  color:var(--green);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  text-shadow:0 0 4px var(--green);
+}
+/* matrix rain */
+#matrix{
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  opacity:.15;
+}
+/* scanline */
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 1px,rgba(0,255,0,.06) 1px,rgba(0,255,0,.06) 2px);
+  pointer-events:none;
+  z-index:10;
+}
+/* glitch title */
+@keyframes glitch{
+  0%,100%{text-shadow:2px 2px #ff0040,-2px -2px #00ffff;}
+  25%{text-shadow:-2px 2px #ff0040,2px -2px #00ffff;}
+  50%{text-shadow:2px -2px #ff0040,-2px 2px #00ffff;}
+  75%{text-shadow:-2px -2px #ff0040,2px 2px #00ffff;}
+}
+h1{
+  font-size:2.2rem;
+  margin-bottom:15px;
+  animation:glitch 1.5s infinite;
+}
+/* terminal window */
+.term{
+  width:100%;
+  max-width:800px;
+  height:400px;
+  background:rgba(0,0,0,.85);
+  border:1px solid var(--green);
+  border-radius:8px;
+  display:flex;
+  flex-direction:column;
+  padding:12px;
+  box-shadow:0 0 20px var(--green);
+}
+#screen{
+  flex:1;
+  overflow-y:auto;
+  white-space:pre-wrap;
+  font-size:13px;
+  line-height:1.4;
+}
+#cmdLine{
+  display:flex;
+  align-items:center;
+  margin-top:8px;
+}
+#cmdLine::before{
+  content:"root@darknet:~# ";
+  color:var(--cyan);
+}
+#cmdInput{
+  flex:1;
+  background:transparent;
+  border:none;
+  color:var(--green);
+  outline:none;
+  font:inherit;
+}
+/* input rows */
+.input-row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  justify-content:center;
+  margin-bottom:10px;
+}
+input[type="text"]{
+  background:transparent;
+  border:1px solid var(--green);
+  border-radius:6px;
+  color:var(--green);
+  padding:6px 10px;
+  font-size:14px;
+  width:200px;
+}
+button{
+  background:var(--green);
+  color:var(--bg);
+  border:none;
+  padding:6px 12px;
+  border-radius:6px;
+  font-weight:700;
+  cursor:pointer;
+  transition:transform .2s,box-shadow .2s;
+}
+button:hover{
+  transform:translateY(-2px);
+  box-shadow:0 4px 15px var(--green);
+}
+</style>
+</head>
+<body>
+<canvas id="matrix"></canvas>
+
+<h1>// DARKNET TERMINAL v9</h1>
+
+<!-- typed inputs -->
+<div class="input-row">
+  <input id="companyInput" placeholder="Company to shut down" type="text"/>
+  <button onclick="shutDownTyped()">💥 Shut Down</button>
+</div>
+<div class="input-row">
+  <input id="personInput" placeholder="Person's full name" type="text"/>
+  <button onclick="grabPersonCard()">💳 Get Card</button>
+</div>
+
+<!-- classic buttons -->
+<div class="input-row">
+  <button onclick="hackCompany()">Random Company</button>
+  <button onclick="grabCard()">Random Card</button>
+  <button onclick="grabAddress()">Random Address</button>
+  <button onclick="clearLog()">Clear</button>
+</div>
+
+<div class="term">
+  <div id="screen">Booting darknet OS...\nType a name or company and hit the buttons.\n</div>
+  <div id="cmdLine">
+    <input autocomplete="off" id="cmdInput" spellcheck="false" type="text"/>
+  </div>
+</div>
+
+<script>
+const screen=document.getElementById('screen');
+const cmdInput=document.getElementById('cmdInput');
+const companyInput=document.getElementById('companyInput');
+const personInput=document.getElementById('personInput');
+function println(t){screen.textContent+=t+'\n';screen.scrollTop=1e9;}
+
+/* ---------- matrix rain ---------- */
+const can=document.getElementById('matrix'),ctx=can.getContext('2d');
+function resize(){can.width=innerWidth;can.height=innerHeight;}
+resize();addEventListener('resize',resize);
+const cols=Math.floor(can.width/12),drops=[...Array(cols)].map(()=>1);
+function draw(){
+  ctx.fillStyle='rgba(0,0,0,.05)';
+  ctx.fillRect(0,0,can.width,can.height);
+  ctx.fillStyle='#0f0';
+  ctx.font='12px monospace';
+  for(let i=0;i<drops.length;i++){
+    const text=String.fromCharCode(33+Math.random()*94);
+    ctx.fillText(text,i*12,drops[i]*12);
+    if(drops[i]*12>can.height&&Math.random()>.975) drops[i]=0;
+    drops[i]++;
+  }
+  requestAnimationFrame(draw);
+}
+draw();
+
+/* ---------- utils ---------- */
+function rnd(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
+function fakeCard(){
+  const bin=['4','5','6'][rnd(0,2)];
+  let num=bin;
+  for(let i=0;i<15;i++) num+=rnd(0,9);
+  return num;
+}
+function fakeName(){
+  const f=['Alex','Jordan','Taylor','Morgan','Casey'];
+  const l=['Smith','Johnson','Williams','Brown','Jones'];
+  return f[rnd(0,f.length-1)]+' '+l[rnd(0,l.length-1)];
+}
+function fakeAddr(){
+  const streets=['Main St','Oak Ave','Pine Rd'];
+  const cities=['Springfield','Riverside','Greenville'];
+  const states=['CA','TX','FL'];
+  return `${rnd(100,9999)} ${streets[rnd(0,streets.length-1)]}, ${cities[rnd(0,cities.length-1)]}, ${states[rnd(0,states.length-1)]} ${rnd(10000,99999)}`;
+}
+function fakeCompany(){
+  const names=['GloboCorp','MegaSys','Initech','CyberDyne'];
+  return names[rnd(0,names.length-1)];
+}
+
+/* ---------- typed actions ---------- */
+function shutDownTyped(){
+  const name=companyInput.value.trim();
+  if(!name){println('❌ Enter a company name.');return;}
+  println(`[${new Date().toLocaleTimeString()}] ▶Targeting "${name}"...`);
+  println(`   💥 Firewall bypassed (GIF injected)`);
+  println(`   ✅ "${name}" database "deleted" (rows set to NULL)`);
+  println('');
+  companyInput.value='';
+}
+function grabPersonCard(){
+  const name=personInput.value.trim();
+  if(!name){println('❌ Enter a person’s name.');return;}
+  println(`[${new Date().toLocaleTimeString()}] ▶Profiling "${name}"...`);
+  println(`   💳 Card: ${fakeCard()}  CVV: ${rnd(100,999)}  Exp: 0${rnd(1,9)}/2${rnd(5,9)}`);
+  println(`   👤 ${name}`);
+  println(`   📍 ${fakeAddr()}`);
+  println('');
+  personInput.value='';
+}
+
+/* ---------- classic buttons ---------- */
+function hackCompany(){
+  println(`[${new Date().toLocaleTimeString()}] ▶Targeting ${fakeCompany()}...`);
+  println(`   💥 Firewall bypassed (GIF injected)`);
+  println(`   ✅ Database "deleted" (rows set to NULL)`);
+  println('');
+}
+function grabCard(){
+  println(`[${new Date().toLocaleTimeString()}] ▶Sniffing packet...`);
+  println(`   💳 Card: ${fakeCard()}  CVV: ${rnd(100,999)}  Exp: 0${rnd(1,9)}/2${rnd(5,9)}`);
+  println(`   👤 ${fakeName()}`);
+  println('');
+}
+function grabAddress(){
+  println(`[${new Date().toLocaleTimeString()}] ▶Geo-locating target...`);
+  println(`   📍 ${fakeAddr()}`);
+  println('');
+}
+function clearLog(){
+  screen.textContent='';
+}
+
+/* ---------- bonus terminal commands ---------- */
+cmdInput.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    const c=cmdInput.value.trim();
+    if(c==='clear')clearLog();
+    else if(c==='help')println('Commands: clear | help | or use the buttons');
+    else if(c)println('bash: '+c+': command not found (try buttons)');
+    cmdInput.value='';
+  }
+});
+</script>
+</body></html>
